@@ -1,0 +1,12 @@
+{
+    "sender": "wendyzhang150@gmail.com",
+    "password": "", 
+    "to": "emilyyijack@gmail.com",
+    "API url": "https://3qbqr98twd.execute-api.us-west-2.amazonaws.com/test",
+    "id_file": "clinicianID.txt",
+    "debug": true,
+    "timeout": 2.5, 
+    "query step": 10,
+    "max tries": 100, 
+    "epsilon": 1e-12
+}

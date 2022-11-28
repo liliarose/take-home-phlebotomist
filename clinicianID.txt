@@ -1,0 +1,6 @@
+/clinicianstatus/1
+/clinicianstatus/2
+/clinicianstatus/3
+/clinicianstatus/4
+/clinicianstatus/5
+/clinicianstatus/6
