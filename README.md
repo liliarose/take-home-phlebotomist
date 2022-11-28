@@ -1,7 +1,6 @@
 # take-home-phlebotomist
 
-By default, queries the site multiple times for 2-3 minutes until it gets a valid response (with geojson features) and then checks if the clinician is within bounds of the polygons passed. If they're out of bounds, sends a warning email. 
-If we don't receive a valid response (a geoJson with 1 point and at least 1 polygon) within 2-3 minutes, we will send a warning email.  
+By default, queries the site every second per clinicianId. If it gets an unexpected response or the clinician is out of bounds, sends an email and then waits for 2-3 seconds before querying again (and sending warnings). How frequently it queries and how long it waits after sending a warning email can be changed in `configs.json.`
 
 ## To Use 
 1. Install shapely: `pip install shapely`
@@ -13,17 +12,15 @@ If we don't receive a valid response (a geoJson with 1 point and at least 1 poly
 ## Notes
 To run all tests: `python3 -m unittest -v` (`-v` is optional but tells us the exact tests that have been run)
 
-I took some liberations with interpreting the instructions:
+I took some liberations:
 
-1. **Gave the server some slack**: If it returns `{"error":"Internal server error!"}` or any other non-expected geoJson message (w/o at least 1 point and 1 polygon) for less than 2-3 minutes, and then returns a valid geoJson response, we'll not send an email warning about how the endpoint was behaving badly.  
-(This can be easily changed in the function `poll_and_process` where we break of the loop if the response code is valid instead of waiting until we get a valid geoJson response)
-2. For some queries, there were unexpected cases of where multiple polygons were given. I assumed that if the clinician was in one of polygons, the clinician was NOT out of bounds. Here's an example:
+1. For some queries, there were unexpected cases of where multiple polygons were given. I assumed that if the clinician was in one of polygons, the clinician was NOT out of bounds. Here's an example:
   ```
   {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.28693008422852,37.51483205774519]}},{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-122.30946063995361,37.548218088360116],[-122.31645584106445,37.53875852887022],[-122.29770183563231,37.53882658754147],[-122.30946063995361,37.548218088360116]],[[-122.28710174560547,37.52000599905024],[-122.29216575622559,37.51251728365287],[-122.28238105773926,37.513130024958315],[-122.28710174560547,37.52000599905024]]]}}]}
   ```
  ![img/unexpected.png](img/unexpected.png)
  
-3. **Gave the clinician `epsilon` slack**: In one case, the clinician was really, really close to the border. Thus, I gave the clinicians `epsilon` allowance; if they were less `epsilon` away from a polygon border, I would not send a warning email. By default, `epsilon` is 1e-12. 
+2. **Gave the clinician `epsilon` slack**: In one case, the clinician was really, really close to the border. Thus, I gave the clinicians `epsilon` allowance; if they were less `epsilon` away from a polygon border, I would not send a warning email. By default, `epsilon` is 1e-12. 
 Here's an example of when the clinician was around 1e-14 from the polygon border:
 ```
 {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [-122.03287124633789, 37.35232882898717]}}, {"type": "Feature", "properties": {}, "geometry": { "type": "Polygon", "coordinates": [[[-122.04145431518556, 37.344368504994286], [-122.0328712463379, 37.344368504994286], [-122.0328712463379, 37.35760507144896], [-122.04145431518556, 37.35760507144896], [-122.04145431518556, 37.344368504994286]]]}}]}
