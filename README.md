@@ -25,7 +25,7 @@ I took some liberations with interpreting the instructions:
 {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [-122.03287124633789, 37.35232882898717]}}, {"type": "Feature", "properties": {}, "geometry": { "type": "Polygon", "coordinates": [[[-122.04145431518556, 37.344368504994286], [-122.0328712463379, 37.344368504994286], [-122.0328712463379, 37.35760507144896], [-122.04145431518556, 37.35760507144896], [-122.04145431518556, 37.344368504994286]]]}}]}
 ```
 
-Zoomed out            |  Zoomed In
+Zoomed In            |  Zoomed Out
 :-------------------------:|:-------------------------:
 ![](img/zoomedIn.png)  |  ![](img/zoomedOut.png)
 
