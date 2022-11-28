@@ -1,14 +1,12 @@
 import argparse
 import time
 import getpass
-
-# import requests
 import json
 import threading
 from main_logic import poll_and_process
 
 required_config_keys = {'sender', 'to', 'API url',
-                        'id_file', 'timeout', 'query step', 'max tries', 'epsilon'}
+                        'id_file', 'wait', 'query step', 'epsilon'}
 
 
 def main(cl_args):
@@ -30,20 +28,12 @@ def main(cl_args):
 
     if args['debug']:
         print(time.time(), client_ids)
-
-    while True:
-        if args['debug']:
-            print('='*50)
-            print('NEW polling cycle')
-        end_time = time.time() + args['timeout']*60
-        threads = [threading.Thread(
-            target=poll_and_process, args=(args, i)) for i in client_ids]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-        if time.time() < end_time:
-            time.sleep(end_time-time.time())
+    
+    threads = [threading.Thread(target=poll_and_process, args=(args, i)) for i in client_ids]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
 
 if __name__ == "__main__":

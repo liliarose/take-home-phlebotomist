@@ -1,12 +1,11 @@
 {
     "sender": "wendyzhang150@gmail.com",
     "password": "", 
-    "to": "emilyyijack@gmail.com",
+    "to": "emilyyijack@gmail.com,coding-challenges+alerts@sprinterhealth.com",
     "API url": "https://3qbqr98twd.execute-api.us-west-2.amazonaws.com/test",
     "id_file": "clinicianID.txt",
     "debug": true,
-    "timeout": 2.5, 
-    "query step": 10,
-    "max tries": 100, 
+    "wait": 3, 
+    "query step": 1,
     "epsilon": 1e-12
 }

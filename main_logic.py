@@ -5,17 +5,18 @@ import json
 import smtplib 
 from email.mime.multipart import MIMEMultipart 
 from email.mime.text import MIMEText 
-import getpass
 from copy import deepcopy
 from math import inf 
-import numpy as np 
 
 def send_email(args, body, subject):
     """ 
-    :param sender: email and password of the sender 
+    sends an email 
 
-    sender, msg, subject should all be strings recipients should be lists of emails just in case we want to send to multiple ppl 
+    :param args: should have the fields: sender, to, password, debug 
+    :param body: email body message 
+    :param subject: email subject  
     """
+    # set up message 
     msg = MIMEMultipart()
     msg['From'] = args["sender"]
     msg['To'] = args["to"]
@@ -23,7 +24,9 @@ def send_email(args, body, subject):
     msg.attach(MIMEText(body, "plain"))
     text = msg.as_string()
     if args['debug']:
-        print('\x1b[%sm %s \x1b[0m' % ('Email:', text))
+        print('\x1b[6;30;42m%sm %s \x1b[0m' % ('Email:', text))
+    
+    # trying to send the email 
     try:
         s = smtplib.SMTP('smtp.gmail.com', 587)
         # TLS (Transport Layer Security) encrypts all the SMTP commands
@@ -34,10 +37,24 @@ def send_email(args, body, subject):
         return True 
     except Exception as e:
         print('Email Exception:', e)
+        return False 
 
-def create_and_send_email(args, r, okay_msg, in_bounds):
-    if okay_msg and in_bounds:
-        return 
+def create_and_send_email(args, r, has_exception, okay_msg=False, in_bounds=False):
+    '''
+    Judges if we should send a warning email 
+    returns bool that tells us whether we sent an email or not 
+
+    :param args: args must have fields expected for `send_email` function 
+    :param r: the reponse or the expection thrown 
+    :has_exception: whether there was an exception
+    :param okay_msg: whether the request was okay and the request body was what we expected 
+    :param in_bounds: whether the clnician was in bounds 
+    '''
+    if okay_msg and in_bounds and not has_exception:
+        return False 
+    if has_exception:
+        subject = f'[Warning] No valid response for {r[0]}'
+        email_body = f"""We did not get a valid response when querying for {r[0]}. Here is the exception: {r[1]}"""
     if not okay_msg:
         subject = f'[Warning] Endpoint did NOT return expected message for {r.request.path_url}'
         email_body = f"""The endpoint returned the following unexpected message for {r.request.url}:\n{r.text}"""
@@ -47,6 +64,11 @@ def create_and_send_email(args, r, okay_msg, in_bounds):
     return send_email(args, email_body, subject)
 
 def get_features(request):
+    '''
+    checks if we have a valid request and if the request body is json and has a features field 
+    returns either nothing or the features field 
+
+    '''
     if request.status_code >= 300:
         return
     try:
@@ -55,10 +77,16 @@ def get_features(request):
         return
     if 'features' not in json_msg:
         return
-
     return json_msg['features']
 
 def get_geoObjs(features):
+    '''
+    Returns 1 point and a list of polygons based on a list of features 
+
+    If no features or more than 1 point in the list or no polygons in list, return nothing
+    '''
+    if not features:
+        return 
     pts_coord = []
     poly_coords = []
     for f in features:
@@ -84,51 +112,62 @@ def get_geoObjs(features):
     return point, polys
 
 def is_in_bounds(pt, polys, ep):
+    '''
+    returns True if pt within one of polygons or within ep distance from a polygon's boundary
+
+    :param pt: point (shapely object)
+    :param polys: list of polygons (shapely objects)
+    :param ep: epsilon/allowance distance (float)
+    '''
     for p in polys:
         if p.boundary.distance(pt) < ep or pt.within(p) or pt.touches(p):
             return True 
     return False 
 
 def poll_and_process(args, get_id):
+    '''
+    Given the get_id and the API url in args,  
+    '''
     url = args['API url']+get_id 
-    timeout = time.time() + args['timeout']*60
-    step_function = lambda s:s*0.9 if s > 1 else s
-    timeout = time.time() + timeout
+    step_function = None #lambda s:s*0.9 if s > 1 else s
     step = args['query step']
-    max_tries = args.get('max tries', inf)
     last_r = pt = polys = None
-    tries = 0 
-    while tries < max_tries:
+    print_n = 0 
+    while True:
+        stop_time = time.time() + step
+        has_exception = False 
+        # get request 
         try:
             last_r = requests.get(url)
-        except ignore_exceptions as e:
-            last_r = e
-        tries += 1
-        features = get_features(last_r)
-        if features:
+        except Exception as e:
+            last_r = (get_id, e)
+            print(e)
+            has_exception = True 
+        
+        # check if it's a valid response  
+        if not has_exception:
+            features = get_features(last_r)
             geoObjs = get_geoObjs(features)
-            if geoObjs:
-                pt, polys = geoObjs
-                break      
-
-        if args['debug']:
-            print('-'*50)
-            print(f'queried {url} at', time.time())     
-            print('\t', last_r.text)
-        # break only after we've queried at least once 
-        if  time.time() >= timeout:
-            break 
-        time.sleep(step)
-        if step_function:
-            step = step_function(step)
-    if args['debug']:
-        print('-'*50)
-        print(f'\x1b[6;30;42mfinished querying {url} at', time.time(),'\x1b[0m')
-        print('\t', last_r.text)
-    okay_msg = (pt and polys)
-    in_bounds = False 
-    if okay_msg:
-        ep = args['epsilon']
-        in_bounds = is_in_bounds(pt, polys, ep)
-    return create_and_send_email(args, last_r, okay_msg, in_bounds)
+            okay_msg = (features and geoObjs)
+            in_bounds = False 
+        if not has_exception and geoObjs:
+            pt, polys = geoObjs
+            in_bounds = is_in_bounds(pt, polys, args['epsilon'])  
+        sent = create_and_send_email(args, last_r, has_exception, okay_msg, in_bounds)
+        if sent:
+            if args['debug']:
+                print('-'*50)
+                print(f'\x1b[6;30;42mSent warning for {url} at', time.time(),'\x1b[0m')
+            step = args['query step']
+            time.sleep(args['wait']*60)
+        else:
+            if args['debug'] and print_n%20 == 0:
+                print('-'*50)
+                print(f'queried {url} at', time.time())     
+                print('\t', last_r.text)
+            if stop_time > time.time():
+                time.sleep(stop_time-time.time())
+            if step_function:
+                step = step_function(step)
+        print_n += 1
 

@@ -44,23 +44,3 @@ class TestGeometry(unittest.TestCase):
     def test_depends0_1(self):
         self.check_bounds(depends[0], True, 1e-10)
     
-
-# class TestInPolygon(unittest.TestCase):
-#     def test_on_boundary(self):
-#         json_msg = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.0328712463379,37.34622162429794]}},{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-122.04145431518556,37.344368504994286],[-122.0328712463379,37.344368504994286],[-122.0328712463379,37.35760507144896],[-122.04145431518556,37.35760507144896],[-122.04145431518556,37.344368504994286]]]}}]}
-#         self.assertEqual(in_polygon(json_msg), True)
-
-#     def test_within_boundary(self):
-#         json_msg = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.36717491149902,37.5859360709783]}},{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-122.35615253448486,37.587302598423875],[-122.35954284667967,37.58859486022663],[-122.36168861389159,37.58992110558973],[-122.36383438110352,37.591281332695054],[-122.36885547637938,37.587574655404694],[-122.37164497375488,37.5832556334297],[-122.3671817779541,37.57808608084389],[-122.35954284667967,37.57509301791995],[-122.34821319580078,37.58475201586989],[-122.35035896301268,37.58699653313186],[-122.35615253448486,37.587302598423875]]]}}]}
-#         self.assertEqual(in_polygon(json_msg), True)
-
-#     def test_out_of_bounds(self):
-#         json_msg = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.22101211547853,37.478604425233506]}},{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-122.26487159729002,37.482282467501285],[-122.24324226379393,37.482282467501285],[-122.24324226379393,37.49855903614401],[-122.26487159729002,37.49855903614401],[-122.26487159729002,37.482282467501285]]]}}]}
-#         self.assertEqual(in_polygon(json_msg), False)
-
-#     def test_checkClinic7(self):
-#         url = 'https://3qbqr98twd.execute-api.us-west-2.amazonaws.com/test/clinicianstatus/7'
-#         request = poll(url, 60, 1)
-#         if check_success(request):
-#             json_msg = json.loads(request.text)
-#             self.assertEqual(in_polygon(json_msg), False)
