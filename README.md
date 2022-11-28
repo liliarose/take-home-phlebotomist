@@ -14,13 +14,17 @@ If we don't receive a valid response (a geoJson with 1 point and at least 1 poly
 To run all tests: `python3 -m unittest -v` (`-v` is optional but tells us the exact tests that have been run)
 
 I took some liberations with interpreting the instructions:
+
+1. **Gave the server some slack**: If it returns `{"error":"Internal server error!"}` or any other non-expected geoJson message (w/o at least 1 point and 1 polygon) for less than 2-3 minutes, and then returns a valid geoJson response, we'll not send an email warning about how the endpoint was behaving badly.  
+(This can be easily changed in the function `poll_and_process` where we break of the loop if the response code is valid instead of waiting until we get a valid geoJson response)
 1. For some queries, there were unexpected cases of where multiple polygons were given. I assumed that if the clinician was in one of polygons, the clinician was NOT out of bounds. Here's an example:
   ```
   {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.28693008422852,37.51483205774519]}},{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-122.30946063995361,37.548218088360116],[-122.31645584106445,37.53875852887022],[-122.29770183563231,37.53882658754147],[-122.30946063995361,37.548218088360116]],[[-122.28710174560547,37.52000599905024],[-122.29216575622559,37.51251728365287],[-122.28238105773926,37.513130024958315],[-122.28710174560547,37.52000599905024]]]}}]}
   ```
  ![img/unexpected.png](img/unexpected.png)
  
-2. Gave the clinician `epsilon` slack: In one case, the clinicians was really, really close to the border. In number terms, it was around 1e-14 off from the polygon's border. Thus, I gave the clinicians `epsilon` allowance; if they were less `epsilon` away from a polygon border, I would not send a warning email. Here's an example:
+2. **Gave the clinician `epsilon` slack**: In one case, the clinician was really, really close to the border. Thus, I gave the clinicians `epsilon` allowance; if they were less `epsilon` away from a polygon border, I would not send a warning email. By default, `epsilon` is 1e-12. 
+Here's an example of when the clinician was around 1e-14 from the polygon border:
 ```
 {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [-122.03287124633789, 37.35232882898717]}}, {"type": "Feature", "properties": {}, "geometry": { "type": "Polygon", "coordinates": [[[-122.04145431518556, 37.344368504994286], [-122.0328712463379, 37.344368504994286], [-122.0328712463379, 37.35760507144896], [-122.04145431518556, 37.35760507144896], [-122.04145431518556, 37.344368504994286]]]}}]}
 ```
@@ -30,10 +34,6 @@ Zoomed In            |  Zoomed Out
 ![](img/zoomedIn.png)  |  ![](img/zoomedOut.png)
 
 To not give this slack, simply change `epsilon` to 0 :blush:
-
-
-2. Gave the server some slack: If it returns `{"error":"Internal server error!"}` or any other non-geoJson message (w/o at least 1 point and 1 polygon) for less than 2-3 minutes, and then returns a valid geoJson response, we'll not send an email warning about the error. However, we will send an email warning about out of bounds if the clinician is out of bounds. 
-(This can be easily changed in the function `poll_and_process`)
 
 #### Possible Extensions 
 1. Create an image of the clinicians that are out of bounds and attach them to emails. 
