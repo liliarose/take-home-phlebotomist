@@ -149,7 +149,7 @@ def poll_and_process(args, get_id):
             features = get_features(last_r)
             geoObjs = get_geoObjs(features)
             okay_msg = (features and geoObjs)
-            in_bounds = False 
+        in_bounds = False 
         if not has_exception and geoObjs:
             pt, polys = geoObjs
             in_bounds = is_in_bounds(pt, polys, args['epsilon'])  
